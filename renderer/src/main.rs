@@ -1,7 +1,7 @@
 use minifb::{Key, Window, WindowOptions};
 
-const WIDTH: usize = 600;
-const HEIGHT: usize = 600;
+const WIDTH: usize = 800;
+const HEIGHT: usize = 800;
 const FOV: f32 = 90.0f32.to_radians();
 const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32; 
 
@@ -19,7 +19,7 @@ const YELLOW:u32 = 0xFFFF00;
 // everything is a triangle so it doesn't matter if this is it lol
 #[derive(Clone, Copy)]
 struct V3 {x: f32, y: f32, z: f32}
-struct Triangle_3D {v0: V3, v1: V3, v2: V3, color: u32}
+struct Triangle3d {v0: V3, v1: V3, v2: V3, color: u32}
 
 fn reset_screen() -> Vec<u32> {
     return vec![0; WIDTH * HEIGHT];
@@ -96,7 +96,7 @@ fn make_triangle_2D(buf: &mut [u32], v1_x: usize, v1_y: usize, v2_x: usize, v2_y
     make_line(buf, v2_x, v2_y, v1_x, v1_y, color);
 }
 
-fn make_triangle_3D(buf: &mut [u32], triangle: Triangle_3D) {
+fn make_triangle_3D(buf: &mut [u32], triangle: Triangle3d) {
     let (x0, y0) = project_3D_to_2D(triangle.v0);
     let (x1, y1) = project_3D_to_2D(triangle.v1);
     let (x2, y2) = project_3D_to_2D(triangle.v2);
@@ -120,6 +120,63 @@ fn rotate_y(v: V3, angle: f32) -> V3 {
     }
 }
 
+fn get_triangle_from_vecs(v0: V3, v1: V3, v2: V3, color: u32) -> Triangle3d {
+    return Triangle3d {
+        v0: v0, 
+        v1: v1, 
+        v2: v2,
+        color: color, 
+    }; 
+}
+
+fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) -> Vec<Triangle3d> {
+    let c1_x = cx - (size / 2) as usize; 
+    let c1_y = cy - (size / 2) as usize;
+    let c1_z = cz - (size / 2) as usize;
+
+    let c2_x = cx + (size / 2) as usize; 
+    let c2_y = cy + (size / 2) as usize;
+    let c2_z = cz + (size / 2) as usize;
+
+    // binary iteration
+    let v_000 = V3 {x: c1_x as f32, y: c1_y as f32, z: c1_z as f32};
+
+    let v_001 = V3 {x: c1_x as f32, y: c1_y as f32, z: c2_z as f32};
+    let v_010 = V3 {x: c1_x as f32, y: c2_y as f32, z: c1_z as f32};
+    let v_100 = V3 {x: c2_x as f32, y: c1_y as f32, z: c1_z as f32};
+
+    let v_011 = V3 {x: c1_x as f32, y: c2_y as f32, z: c2_z as f32};
+    let v_110 = V3 {x: c2_x as f32, y: c2_y as f32, z: c1_z as f32};
+    let v_101 = V3 {x: c2_x as f32, y: c1_y as f32, z: c2_z as f32};
+
+    let v_111 = V3 {x: c2_x as f32, y: c2_y as f32, z: c2_z as f32};
+
+    return vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ];
+}
+
+fn draw_3d_from_triangles(buf: &mut [u32], triangles: Vec<Triangle3d>) {
+    for triangle in triangles {
+        make_triangle_3D(buf, triangle); 
+    }
+}
 
 
 fn main() {
@@ -134,10 +191,19 @@ fn main() {
         // make_square(&mut buffer, 300, 300, 100, GREEN);
         // make_square(&mut buffer, 300, 300, 80, GREEN);
 
-        make_square(&mut buffer, 300, 300, 150, YELLOW); 
-        make_triangle_2D(&mut buffer, 100, 500, 350, 200, 500, 500, GREEN);
-        make_triangle_2D(&mut buffer, 150 - 100, 550 - 100, 400 - 100, 250 - 100, 550 - 100, 550 -100, RED); 
+        // make_square(&mut buffer, 300, 300, 150, YELLOW); 
+        // make_triangle_2D(&mut buffer, 100, 500, 350, 200, 500, 500, GREEN);
+        // make_triangle_2D(&mut buffer, 150 - 100, 550 - 100, 400 - 100, 250 - 100, 550 - 100, 550 -100, RED); 
         
+        let cube1 = get_cube_triangles(35, 50, 35, 100, GREEN); 
+        draw_3d_from_triangles(&mut buffer, cube1);
+
+        let cube2 = get_cube_triangles(35, 50, 35, 150, RED); 
+        draw_3d_from_triangles(&mut buffer, cube2); 
+
+        let cube3 = get_cube_triangles(15, 15, 15, 150, BLUE); 
+        draw_3d_from_triangles(&mut buffer, cube3); 
+
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
