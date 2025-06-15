@@ -1,8 +1,9 @@
 use minifb::{Key, Window, WindowOptions};
-use std::cmp::{max, min};
 
 const WIDTH: usize = 600;
 const HEIGHT: usize = 600;
+const FOV: f32 = 90.0f32.to_radians();
+const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32; 
 
 // Colors so I don't go insane type hexcodes
 const BLACK: u32 = 0x000000;
@@ -12,8 +13,24 @@ const GREEN: u32 = 0x00FF00;
 const BLUE:  u32 = 0x0000FF;
 const YELLOW:u32 = 0xFFFF00;
 
+
+// some 3D structs, I don't know if doing it this way is smart
+// but I will probably put this in a different file later anyway
+// everything is a triangle so it doesn't matter if this is it lol
+#[derive(Clone, Copy)]
+struct V3 {x: f32, y: f32, z: f32}
+struct Triangle_3D {v0: V3, v1: V3, v2: V3, color: u32}
+
 fn reset_screen() -> Vec<u32> {
     return vec![0; WIDTH * HEIGHT];
+}
+
+fn project_3D_to_2D(v: V3) -> (i32, i32) {
+    let scale = (FOV * 0.5).tan(); 
+
+    let x = (v.x / (v.z * scale * ASPECT_RATIO)) * WIDTH as f32 / 2.0 + WIDTH as f32 / 2.0;
+    let y = -(v.y / (v.z * scale)) * HEIGHT as f32 / 2.0 + HEIGHT as f32 / 2.0;
+    (x as i32, y as i32)
 }
 
 fn make_line(buf: &mut [u32], p1_x: usize, p1_y: usize, p2_x: usize, p2_y: usize, color: u32) {
@@ -73,11 +90,36 @@ fn make_square(buf: &mut [u32], cx: usize, cy: usize, size: i32, color: u32){
     make_line(buf, c2_x, c2_y, c2_x, c1_y, color); 
 }
 
-fn make_triangle(buf: &mut [u32], v1_x: usize, v1_y: usize, v2_x: usize, v2_y: usize, v3_x: usize, v3_y: usize, color: u32) {
+fn make_triangle_2D(buf: &mut [u32], v1_x: usize, v1_y: usize, v2_x: usize, v2_y: usize, v3_x: usize, v3_y: usize, color: u32) {
     make_line(buf, v1_x, v1_y, v3_x, v3_y, color); 
     make_line(buf, v2_x, v2_y, v3_x, v3_y, color);
     make_line(buf, v2_x, v2_y, v1_x, v1_y, color);
 }
+
+fn make_triangle_3D(buf: &mut [u32], triangle: Triangle_3D) {
+    let (x0, y0) = project_3D_to_2D(triangle.v0);
+    let (x1, y1) = project_3D_to_2D(triangle.v1);
+    let (x2, y2) = project_3D_to_2D(triangle.v2);
+
+    make_triangle_2D(
+        buf,
+        x0 as usize, y0 as usize,
+        x1 as usize, y1 as usize,
+        x2 as usize, y2 as usize,
+        triangle.color,
+    );
+}
+
+fn rotate_y(v: V3, angle: f32) -> V3 {
+    let sin_a = angle.sin();
+    let cos_a = angle.cos();
+    V3 {
+        x: v.x * cos_a - v.z * sin_a,
+        y: v.y,
+        z: v.x * sin_a + v.z * cos_a,
+    }
+}
+
 
 
 fn main() {
@@ -85,15 +127,16 @@ fn main() {
 
     let mut window = Window::new("Baby Steps", WIDTH, HEIGHT, WindowOptions::default())
         .unwrap_or_else(|e| panic!("Error making a window! You goofed!: {}", e));
-
+    
+    let mut angle = 0.0;
     while window.is_open() && !window.is_key_down(Key::Q) {
         buffer = reset_screen(); 
         // make_square(&mut buffer, 300, 300, 100, GREEN);
         // make_square(&mut buffer, 300, 300, 80, GREEN);
 
-        // make_square(&mut buffer, 300, 300, 80, GREEN); 
-        make_triangle(&mut buffer, 100, 500, 350, 200, 500, 500, GREEN);
-        make_triangle(&mut buffer, 150, 550, 400, 250, 550, 550, RED); 
+        make_square(&mut buffer, 300, 300, 150, YELLOW); 
+        make_triangle_2D(&mut buffer, 100, 500, 350, 200, 500, 500, GREEN);
+        make_triangle_2D(&mut buffer, 150 - 100, 550 - 100, 400 - 100, 250 - 100, 550 - 100, 550 -100, RED); 
         
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
