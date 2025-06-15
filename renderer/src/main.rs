@@ -178,6 +178,26 @@ fn draw_3d_from_triangles(buf: &mut [u32], triangles: Vec<Triangle3d>) {
     }
 }
 
+// this probably works but my cube rendering implementation is wrong right now
+// so I can't verify it lol; I'll get back to this at some point
+fn rotate_y_triangle(triangles: Vec<Triangle3d>, angle: f32) -> Vec<Triangle3d> {
+    let sin_a = angle.sin();
+    let cos_a = angle.cos();
+
+    let mut out_vec: Vec<Triangle3d> = vec![];
+    
+    for triangle in triangles {
+        let vecs = vec![triangle.v0, triangle.v1, triangle.v2]; 
+        let mut new_vecs: Vec<V3> = vec![];  
+        for v in vecs {
+            new_vecs.push(rotate_y(v, angle));  
+        }
+        out_vec.push(get_triangle_from_vecs(new_vecs[0], new_vecs[1], new_vecs[2], triangle.color)); 
+    } 
+    return out_vec; 
+    
+}
+
 
 fn main() {
     let mut buffer: Vec<u32> = reset_screen(); 
@@ -201,8 +221,8 @@ fn main() {
         let cube2 = get_cube_triangles(35, 50, 35, 150, RED); 
         draw_3d_from_triangles(&mut buffer, cube2); 
 
-        let cube3 = get_cube_triangles(15, 15, 15, 150, BLUE); 
-        draw_3d_from_triangles(&mut buffer, cube3); 
+        let cube3 = rotate_y_triangle(get_cube_triangles(15, 15, 15, 150, BLUE), angle);
+        draw_3d_from_triangles(&mut buffer, cube3);
 
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
