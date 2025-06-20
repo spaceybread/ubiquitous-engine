@@ -1,2 +1,4 @@
 renderer/target/*
 renderer/Cargo.lock
+spinning_cube/target/*
+spinning_cube/Cargo.lock
