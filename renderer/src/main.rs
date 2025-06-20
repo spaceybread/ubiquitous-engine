@@ -25,14 +25,15 @@ fn reset_screen() -> Vec<u32> {
     return vec![0; WIDTH * HEIGHT];
 }
 
+// project 3D coordinates to 2D coordinates, this is probably
+// the backbone of all 3D stuff here
 fn project_3D_to_2D(mut v: V3) -> (i32, i32) {
     v.z += 250.0;
     if v.z <= 0.01 {
         return (WIDTH as i32 / 2, HEIGHT as i32 / 2); // fallback
     }
 
-    let fov = 90.0f64.to_radians();
-    let scale = 1.0 / (fov * 0.5).tan();
+    let scale = 1.0 / (FOV * 0.5).tan();
     let aspect_ratio = WIDTH as f64 / HEIGHT as f64;
 
     let x = (v.x * scale / (v.z * aspect_ratio)) * WIDTH as f64 / 2.0 + WIDTH as f64 / 2.0;
@@ -41,6 +42,7 @@ fn project_3D_to_2D(mut v: V3) -> (i32, i32) {
     (x as i32, y as i32)
 }
 
+// fairly standard way to make a line, just step through
 fn make_line(buf: &mut [u32], p1_x: usize, p1_y: usize, p2_x: usize, p2_y: usize, color: u32) {
     let x0 = p1_x as isize;
     let y0 = p1_y as isize;
@@ -73,6 +75,8 @@ fn make_line(buf: &mut [u32], p1_x: usize, p1_y: usize, p2_x: usize, p2_y: usize
     }
 }
 
+// another potential way to do this is to just make a lot
+// of lines but this is easier
 fn make_square_filled(buf: &mut [u32], cx: usize, cy: usize, size: i32, color: u32){
     for y in -size / 2..size / 2 {
         for x in -size / 2..size / 2 {
@@ -86,6 +90,7 @@ fn make_square_filled(buf: &mut [u32], cx: usize, cy: usize, size: i32, color: u
     }
 }
 
+// basic square with 4 lines
 fn make_square(buf: &mut [u32], cx: usize, cy: usize, size: i32, color: u32){
     let c1_x = cx - (size / 2) as usize; 
     let c1_y = cy - (size / 2) as usize;
@@ -98,12 +103,14 @@ fn make_square(buf: &mut [u32], cx: usize, cy: usize, size: i32, color: u32){
     make_line(buf, c2_x, c2_y, c2_x, c1_y, color); 
 }
 
+// another basic shape for 2D
 fn make_triangle_2D(buf: &mut [u32], v1_x: usize, v1_y: usize, v2_x: usize, v2_y: usize, v3_x: usize, v3_y: usize, color: u32) {
     make_line(buf, v1_x, v1_y, v3_x, v3_y, color); 
     make_line(buf, v2_x, v2_y, v3_x, v3_y, color);
     make_line(buf, v2_x, v2_y, v1_x, v1_y, color);
 }
 
+// the other backbone of all 3D, the best primitive
 fn make_triangle_3D(buf: &mut [u32], triangle: Triangle3d) {
     let (x0, y0) = project_3D_to_2D(triangle.v0);
     let (x1, y1) = project_3D_to_2D(triangle.v1);
@@ -118,6 +125,7 @@ fn make_triangle_3D(buf: &mut [u32], triangle: Triangle3d) {
     );
 }
 
+// unused right now, might not need it at all lol
 fn rotate_y(v: V3, an: f64) -> V3 {
     let sin_a = an.sin();
     let cos_a = an.cos();
@@ -128,6 +136,7 @@ fn rotate_y(v: V3, an: f64) -> V3 {
     }
 }
 
+// helper to make a Triangle struct
 fn get_triangle_from_vecs(v0: V3, v1: V3, v2: V3, color: u32) -> Triangle3d {
     return Triangle3d {
         v0: v0, 
@@ -137,6 +146,11 @@ fn get_triangle_from_vecs(v0: V3, v1: V3, v2: V3, color: u32) -> Triangle3d {
     }; 
 }
 
+// Unlike the 2D shapes that I just draw straight to the buffer, my idea
+// with the 3D shapes is to create generators that output a list of triangles
+// that can be then projected one at a time onto the buffer
+// this will make doing manipulations like rotations, transforms, and translations easier
+// ...once I get there
 fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) -> Vec<Triangle3d> {
     let c1_x = cx - (size ) as usize; 
     let c1_y = cy - (size ) as usize;
@@ -147,6 +161,7 @@ fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) ->
     let c2_z = cz + (size ) as usize;
 
     // binary iteration
+    // It's like the Klein-4 group but with three switches
     let v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
 
     let v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
@@ -180,6 +195,8 @@ fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) ->
     ];
 }
 
+// takes a list of triangles and adds them to the buffer, 
+// Three.js does something like this with world.add()
 fn draw_3d_from_triangles(buf: &mut [u32], triangles: Vec<Triangle3d>) {
     for triangle in triangles {
         make_triangle_3D(buf, triangle); 
@@ -188,6 +205,7 @@ fn draw_3d_from_triangles(buf: &mut [u32], triangles: Vec<Triangle3d>) {
 
 // this probably works but my cube rendering implementation is wrong right now
 // so I can't verify it lol; I'll get back to this at some point
+// unused and I'm probably going to remove it
 fn rotate_y_triangle(triangles: Vec<Triangle3d>, angle: f64) -> Vec<Triangle3d> {
     let sin_a = angle.sin();
     let cos_a = angle.cos();
@@ -206,6 +224,8 @@ fn rotate_y_triangle(triangles: Vec<Triangle3d>, angle: f64) -> Vec<Triangle3d> 
     
 }
 
+// rotate a list triangles, think of each call of this as using one rotation
+// matrix and order matters as matrix mult is not commutative
 fn rotate_triangles(mut triangles: Vec<Triangle3d>, ax: f64, ay: f64, az: f64) -> Vec<Triangle3d> {
     let mut out_vec: Vec<Triangle3d> = vec![];
     
@@ -223,6 +243,7 @@ fn rotate_triangles(mut triangles: Vec<Triangle3d>, ax: f64, ay: f64, az: f64) -
     
 }
 
+// helper to rotate a specifc point
 fn rotate_point(i: f64, j: f64, k: f64, ax: f64, ay: f64, az: f64) -> (f64, f64, f64) {
     let (mut x, mut y, mut z) = (i, j * ax.cos() - k * ax.sin(), j * ax.sin() + k * ax.cos());
     let (nx, ny, nz) = (x * ay.cos() + z * ay.sin(), y, -x * ay.sin() + z * ay.cos());
