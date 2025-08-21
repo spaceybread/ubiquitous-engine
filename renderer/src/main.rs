@@ -115,7 +115,7 @@ fn make_triangle_3D(buf: &mut [u32], triangle: Triangle3d) {
     let (x0, y0) = project_3D_to_2D(triangle.v0);
     let (x1, y1) = project_3D_to_2D(triangle.v1);
     let (x2, y2) = project_3D_to_2D(triangle.v2);
-
+    
     make_triangle_2D(
         buf,
         x0 as usize, y0 as usize,
@@ -123,6 +123,7 @@ fn make_triangle_3D(buf: &mut [u32], triangle: Triangle3d) {
         x2 as usize, y2 as usize,
         triangle.color,
     );
+    // fill_triangle(buf, x0, y0, x1, y1, x2, y2, triangle.color);
 }
 
 // unused right now, might not need it at all lol
@@ -146,12 +147,100 @@ fn get_triangle_from_vecs(v0: V3, v1: V3, v2: V3, color: u32) -> Triangle3d {
     }; 
 }
 
+// helper to get an edge
+fn edge_function(ax: f64, ay: f64, bx: f64, by: f64, cx: f64, cy: f64) -> f64 {
+    (cx - ax) * (by - ay) - (cy - ay) * (bx - ax)
+}
+
+// making filled triangles
+// dont think real life is just wireframes lol
+fn fill_triangle(buf: &mut [u32], x0: i32, y0: i32, 
+                 x1: i32, y1: i32, 
+                 x2: i32, y2: i32, color: u32) {
+    let min_x = x0.min(x1.min(x2)).max(0);
+    let max_x = x0.max(x1.max(x2)).min(WIDTH as i32 - 1);
+    let min_y = y0.min(y1.min(y2)).max(0);
+    let max_y = y0.max(y1.max(y2)).min(HEIGHT as i32 - 1);
+
+    let area = edge_function(x0 as f64, y0 as f64,
+        x1 as f64, y1 as f64,
+        x2 as f64, y2 as f64);
+
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
+            let w0 = edge_function(x1 as f64, y1 as f64,
+                        x2 as f64, y2 as f64,
+                        x as f64, y as f64);
+            let w1 = edge_function(x2 as f64, y2 as f64,
+                        x0 as f64, y0 as f64,
+                        x as f64, y as f64);
+            let w2 = edge_function(x0 as f64, y0 as f64,
+                        x1 as f64, y1 as f64,
+                        x as f64, y as f64);
+
+            if (area >= 0.0 && w0 >= 0.0 && w1 >= 0.0 && w2 >= 0.0)
+            || (area < 0.0 && w0 <= 0.0 && w1 <= 0.0 && w2 <= 0.0) {
+            let idx = y as usize * WIDTH + x as usize;
+            buf[idx] = color;
+            }
+        }
+    }
+}
+
+// time to add lighting
+
 // Unlike the 2D shapes that I just draw straight to the buffer, my idea
 // with the 3D shapes is to create generators that output a list of triangles
 // that can be then projected one at a time onto the buffer
 // this will make doing manipulations like rotations, transforms, and translations easier
 // ...once I get there
 fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) -> Vec<Triangle3d> {
+    let c1_x = cx - (size ) as usize; 
+    let c1_y = cy - (size ) as usize;
+    let c1_z = cz - (size ) as usize;
+
+    let c2_x = cx + (size ) as usize; 
+    let c2_y = cy + (size ) as usize;
+    let c2_z = cz + (size ) as usize;
+
+    // binary iteration
+    // It's like the Klein-4 group but with three switches
+    let v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    let v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    let v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    let v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    let v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    let v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    let v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    let v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    return vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ];
+}
+
+// wireframe hand! 
+fn wireframe_hand(cx: usize, cy: usize, cz: usize, color: u32) -> Vec<Triangle3d> {
+    let size = 50; 
     let c1_x = cx - (size ) as usize; 
     let c1_y = cy - (size ) as usize;
     let c1_z = cz - (size ) as usize;
@@ -275,8 +364,9 @@ fn main() {
         // let cube2 = get_cube_triangles(35, 50, 35, 50, RED); 
         // draw_3d_from_triangles(&mut buffer, cube2); 
 
-        let cube3 = rotate_triangles(get_cube_triangles(50, 50, 50, 50, BLUE), angle, -1.0 * angle, -0.5 * angle);
-        draw_3d_from_triangles(&mut buffer, cube3);
+        // let cube3 = rotate_triangles(get_cube_triangles(50, 50, 50, 50, BLUE), angle, -1.0 * angle, -0.5 * angle);
+        let hand = wireframe_hand(50, 50, 50, BLUE); 
+        draw_3d_from_triangles(&mut buffer, hand);
         angle += 0.01; 
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
