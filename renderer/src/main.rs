@@ -28,18 +28,24 @@ fn reset_screen() -> Vec<u32> {
 // project 3D coordinates to 2D coordinates, this is probably
 // the backbone of all 3D stuff here
 fn project_3D_to_2D(mut v: V3) -> (i32, i32) {
-    v.z += 250.0;
+    // Move camera backwards instead of pushing objects forward
+    let camera_z = -250.0;
+    v.z -= camera_z;
+
     if v.z <= 0.01 {
-        return (WIDTH as i32 / 2, HEIGHT as i32 / 2); // fallback
+        return (WIDTH as i32 / 2, HEIGHT as i32 / 2); // clipped behind camera
     }
 
     let scale = 1.0 / (FOV * 0.5).tan();
     let aspect_ratio = WIDTH as f64 / HEIGHT as f64;
 
-    let x = (v.x * scale / (v.z * aspect_ratio)) * WIDTH as f64 / 2.0 + WIDTH as f64 / 2.0;
-    let y = -(v.y * scale / v.z) * HEIGHT as f64 / 2.0 + HEIGHT as f64 / 2.0;
+    let x_ndc = (v.x * scale) / (v.z * aspect_ratio); // normalized -1..1
+    let y_ndc = -(v.y * scale) / v.z;
 
-    (x as i32, y as i32)
+    let x_screen = (x_ndc * WIDTH as f64 / 2.0) + WIDTH as f64 / 2.0;
+    let y_screen = (y_ndc * HEIGHT as f64 / 2.0) + HEIGHT as f64 / 2.0;
+
+    (x_screen as i32, y_screen as i32)
 }
 
 // fairly standard way to make a line, just step through
@@ -239,15 +245,20 @@ fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) ->
 }
 
 // wireframe hand! 
-fn wireframe_hand(cx: usize, cy: usize, cz: usize, color: u32) -> Vec<Triangle3d> {
-    let size = 50; 
-    let c1_x = cx - (size ) as usize; 
-    let c1_y = cy - (size ) as usize;
-    let c1_z = cz - (size ) as usize;
+fn wireframe_hand(color: u32) -> Vec<Triangle3d> {
+    let size = 20.0;
 
-    let c2_x = cx + (size ) as usize; 
-    let c2_y = cy + (size ) as usize;
-    let c2_z = cz + (size ) as usize;
+    let cx = 0.0; 
+    let cy = -20.0; 
+    let cz = 20.0;
+
+    let c1_x = cx - size;
+    let c1_y = cy - size / 2.0;
+    let c1_z = cz - size;
+
+    let c2_x = cx + size;
+    let c2_y = cy + size / 2.0;
+    let c2_z = cz + size;
 
     // binary iteration
     // It's like the Klein-4 group but with three switches
@@ -365,7 +376,7 @@ fn main() {
         // draw_3d_from_triangles(&mut buffer, cube2); 
 
         // let cube3 = rotate_triangles(get_cube_triangles(50, 50, 50, 50, BLUE), angle, -1.0 * angle, -0.5 * angle);
-        let hand = wireframe_hand(50, 50, 50, BLUE); 
+        let hand = wireframe_hand(BLUE); 
         draw_3d_from_triangles(&mut buffer, hand);
         angle += 0.01; 
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
