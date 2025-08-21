@@ -29,7 +29,7 @@ fn reset_screen() -> Vec<u32> {
 // the backbone of all 3D stuff here
 fn project_3D_to_2D(mut v: V3) -> (i32, i32) {
     // Move camera backwards instead of pushing objects forward
-    let camera_z = -250.0;
+    let camera_z = -150.0;
     v.z -= camera_z;
 
     if v.z <= 0.01 {
@@ -245,36 +245,40 @@ fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) ->
 }
 
 // wireframe hand! 
-fn wireframe_hand(color: u32) -> Vec<Triangle3d> {
-    let size = 20.0;
+fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
+    let mut out_vec = vec![]; 
 
-    let cx = 0.0; 
-    let cy = -20.0; 
-    let cz = 20.0;
+    // base of the hand
+    let mut size = 20.0;
 
-    let c1_x = cx - size;
-    let c1_y = cy - size / 2.0;
-    let c1_z = cz - size;
+    let mut cx = 0.0; 
+    let mut cy = -30.0; 
+    let mut cz = -15.0;
 
-    let c2_x = cx + size;
-    let c2_y = cy + size / 2.0;
-    let c2_z = cz + size;
+    let mut c1_x = cx - size;
+    let mut c1_y = cy - size / 4.0;
+    let mut c1_z = cz - size;
+
+    let mut c2_x = cx + size;
+    let mut c2_y = cy + size / 4.0;
+    let mut c2_z = cz + size;
 
     // binary iteration
     // It's like the Klein-4 group but with three switches
-    let v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+    let mut v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
 
-    let v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
-    let v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
-    let v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+    let mut v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    let mut v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    let mut v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
 
-    let v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
-    let v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
-    let v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+    let mut v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    let mut v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    let mut v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
 
-    let v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+    let mut v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
 
-    return vec![
+    let mut color = RED; 
+    let mut base_vecs = vec![
     // triangles to make: 
         get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
         get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
@@ -292,7 +296,516 @@ fn wireframe_hand(color: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
-    ];
+    ]; 
+    out_vec.append(&mut base_vecs); 
+
+
+    // wrist
+    size = 10.0;
+
+    cx = 0.0; 
+    cy = -20.0; 
+    cz = -15.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size / 2.0;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size / 2.0;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = YELLOW;
+    let mut wrist_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut wrist_vecs); 
+
+    // finger_1_top
+    size = 8.0;
+
+    cx = -20.0; 
+    cy = 75.0; 
+    cz = 10.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size * 1.7;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size * 1.7;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = RED;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+
+    // finger_1_bot
+    size = 8.0;
+
+    cx = -20.0; 
+    cy = 45.0; 
+    cz = 10.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size * 1.7;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size * 1.7;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = YELLOW;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+
+    // finger_2_top
+    size = 8.0;
+
+    cx = 0.0; 
+    cy = 75.0; 
+    cz = 10.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size * 1.7;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size * 1.7;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = RED;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+
+    // finger_2_bot
+    size = 8.0;
+
+    cx = 0.0; 
+    cy = 45.0; 
+    cz = 10.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size * 1.7;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size * 1.7;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = YELLOW;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+
+    // finger_3_top
+    size = 8.0;
+
+    cx = 20.0; 
+    cy = 75.0; 
+    cz = 10.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size * 1.7;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size * 1.7;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = RED;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+
+    // finger_3_bot
+    size = 8.0;
+
+    cx = 20.0; 
+    cy = 45.0; 
+    cz = 10.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size * 1.7;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size * 1.7;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = YELLOW;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+
+    // finger_4_top
+    size = 8.0;
+
+    cx = 40.0; 
+    cy = 20.0; 
+    cz = 10.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size;
+    c1_z = cz - size;
+
+    c2_x = cx + size;
+    c2_y = cy + size;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = RED;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+
+    // finger_4_bot
+    size = 8.0;
+
+    cx = 40.0; 
+    cy = 0.0; 
+    cz = 10.0;
+
+    c1_x = cx - size * 1.2;
+    c1_y = cy - size;
+    c1_z = cz - size;
+
+    c2_x = cx + size * 1.2;
+    c2_y = cy + size;
+    c2_z = cz + size;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = YELLOW;
+    let mut finger_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut finger_vecs);
+    
+
+
+    // palm
+    size = 30.0;
+
+    cx = 0.0; 
+    cy = 9.0; 
+    cz = 50.0;
+
+    c1_x = cx - size;
+    c1_y = cy - size;
+    c1_z = cz - size / 1.5;
+
+    c2_x = cx + size;
+    c2_y = cy + size;
+    c2_z = cz + size / 1.5;
+
+    v_000 = V3 {x: c1_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_001 = V3 {x: c1_x as f64, y: c1_y as f64, z: c2_z as f64};
+    v_010 = V3 {x: c1_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_100 = V3 {x: c2_x as f64, y: c1_y as f64, z: c1_z as f64};
+
+    v_011 = V3 {x: c1_x as f64, y: c2_y as f64, z: c2_z as f64};
+    v_110 = V3 {x: c2_x as f64, y: c2_y as f64, z: c1_z as f64};
+    v_101 = V3 {x: c2_x as f64, y: c1_y as f64, z: c2_z as f64};
+
+    v_111 = V3 {x: c2_x as f64, y: c2_y as f64, z: c2_z as f64};
+
+    color = RED;
+    let mut palm_vecs = vec![
+    // triangles to make: 
+        get_triangle_from_vecs(v_000, v_001, v_010, color), // 000-001-010
+        get_triangle_from_vecs(v_000, v_001, v_100, color), // 000-001-100
+        get_triangle_from_vecs(v_000, v_010, v_100, color), // 000-010-100
+        
+        get_triangle_from_vecs(v_111, v_101, v_110, color), // 111-101-110
+        get_triangle_from_vecs(v_111, v_101, v_011, color), // 111-101-011
+        get_triangle_from_vecs(v_111, v_110, v_011, color), // 111-110-011
+
+        get_triangle_from_vecs(v_100, v_101, v_001, color), // 100-101-001
+        get_triangle_from_vecs(v_100, v_101, v_110, color), // 100-101-110
+        get_triangle_from_vecs(v_100, v_110, v_010, color), // 100-110-010
+
+        get_triangle_from_vecs(v_011, v_101, v_001, color), // 011-101-001
+        get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
+        get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
+
+    ]; 
+    out_vec.append(&mut palm_vecs);
+    return out_vec; 
+}
+
+fn make_hand_skel(buffer: &mut [u32]) {
+    make_line(buffer, 400, 500, 400, 360, GREEN); 
+    make_line(buffer, 400, 360, 345, 300, GREEN); 
+    make_line(buffer, 400, 360, 450, 300, GREEN); 
+    make_line(buffer, 400, 360, 400, 300, GREEN); 
+
+    make_line(buffer, 400, 400, 500, 400, GREEN); 
+    make_line(buffer, 500, 400, 500, 350, GREEN); 
+
+    make_line(buffer, 450, 200, 450, 300, GREEN); 
+    make_line(buffer, 345, 200, 345, 300, GREEN); 
+    make_line(buffer, 400, 200, 400, 300, GREEN); 
 }
 
 // takes a list of triangles and adds them to the buffer, 
@@ -352,6 +865,16 @@ fn rotate_point(i: f64, j: f64, k: f64, ax: f64, ay: f64, az: f64) -> (f64, f64,
     (fx, fy, fz)
 }
 
+fn rotate_z(v: V3, angle: f64) -> V3 {
+    let cos = angle.cos();
+    let sin = angle.sin();
+    V3 {
+        x: v.x * cos - v.y * sin,
+        y: v.x * sin + v.y * cos,
+        z: v.z,
+    }
+}
+
 
 fn main() {
     let mut buffer: Vec<u32> = reset_screen(); 
@@ -374,9 +897,10 @@ fn main() {
 
         // let cube2 = get_cube_triangles(35, 50, 35, 50, RED); 
         // draw_3d_from_triangles(&mut buffer, cube2); 
-
         // let cube3 = rotate_triangles(get_cube_triangles(50, 50, 50, 50, BLUE), angle, -1.0 * angle, -0.5 * angle);
-        let hand = wireframe_hand(BLUE); 
+        make_hand_skel(&mut buffer); 
+        let mut hand = wireframe_hand(BLUE); 
+        // hand = rotate_triangles(hand,  angle, -1.0 * angle, -0.5 * angle);
         draw_3d_from_triangles(&mut buffer, hand);
         angle += 0.01; 
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
