@@ -19,6 +19,7 @@ const YELLOW:u32 = 0xFFFF00;
 // everything is a triangle so it doesn't matter if this is it lol
 #[derive(Clone, Copy)]
 struct V3 {x: f64, y: f64, z: f64}
+#[derive(Clone, Copy)]
 struct Triangle3d {v0: V3, v1: V3, v2: V3, color: u32}
 
 fn reset_screen() -> Vec<u32> {
@@ -245,8 +246,9 @@ fn get_cube_triangles(size: i32, cx: usize, cy: usize, cz: usize, color: u32) ->
 }
 
 // wireframe hand! 
-fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
+fn wireframe_hand(color1: u32) -> (Vec<Triangle3d>, Vec<(String, usize, usize)>) {
     let mut out_vec = vec![]; 
+    let mut idx_tup = vec![]; 
 
     // base of the hand
     let mut size = 20.0;
@@ -296,8 +298,11 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
-    ]; 
-    out_vec.append(&mut base_vecs); 
+    ];
+
+    let mut old_idx = out_vec.len(); 
+    out_vec.append(&mut base_vecs);
+    idx_tup.push(("base".to_string(), old_idx, out_vec.len())); 
 
 
     // wrist
@@ -347,7 +352,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
+
+    let mut old_idx = out_vec.len(); 
     out_vec.append(&mut wrist_vecs); 
+    idx_tup.push(("wrist".to_string(), old_idx, out_vec.len()));
 
     // finger_1_top
     size = 8.0;
@@ -396,7 +404,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
-    out_vec.append(&mut finger_vecs);
+
+    let mut old_idx = out_vec.len();
+    out_vec.append(&mut finger_vecs); 
+    idx_tup.push(("finger_1_top".to_string(), old_idx, out_vec.len()));
 
     // finger_1_bot
     size = 8.0;
@@ -445,7 +456,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
+
+    let mut old_idx = out_vec.len();
     out_vec.append(&mut finger_vecs);
+    idx_tup.push(("finger_1_bot".to_string(), old_idx, out_vec.len()));
 
     // finger_2_top
     size = 8.0;
@@ -494,7 +508,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
-    out_vec.append(&mut finger_vecs);
+
+    let mut old_idx = out_vec.len();
+    out_vec.append(&mut finger_vecs); 
+    idx_tup.push(("finger_2_top".to_string(), old_idx, out_vec.len()));
 
     // finger_2_bot
     size = 8.0;
@@ -543,7 +560,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
-    out_vec.append(&mut finger_vecs);
+
+    let mut old_idx = out_vec.len();
+    out_vec.append(&mut finger_vecs); 
+    idx_tup.push(("finger_2_bot".to_string(), old_idx, out_vec.len()));
 
     // finger_3_top
     size = 8.0;
@@ -592,7 +612,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
-    out_vec.append(&mut finger_vecs);
+
+    let mut old_idx = out_vec.len();
+    out_vec.append(&mut finger_vecs); 
+    idx_tup.push(("finger_3_top".to_string(), old_idx, out_vec.len()));
 
     // finger_3_bot
     size = 8.0;
@@ -641,7 +664,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
-    out_vec.append(&mut finger_vecs);
+
+    let mut old_idx = out_vec.len();
+    out_vec.append(&mut finger_vecs); 
+    idx_tup.push(("finger_3_bot".to_string(), old_idx, out_vec.len()));
 
     // finger_4_top
     size = 8.0;
@@ -690,7 +716,10 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
-    out_vec.append(&mut finger_vecs);
+
+    let mut old_idx = out_vec.len();
+    out_vec.append(&mut finger_vecs); 
+    idx_tup.push(("finger_4_top".to_string(), old_idx, out_vec.len()));
 
     // finger_4_bot
     size = 8.0;
@@ -738,8 +767,11 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_010, v_110, color), // 011-010-110
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
-    ]; 
-    out_vec.append(&mut finger_vecs);
+    ];
+
+    let mut old_idx = out_vec.len();
+    out_vec.append(&mut finger_vecs); 
+    idx_tup.push(("finger_4_bot".to_string(), old_idx, out_vec.len()));
     
 
 
@@ -790,8 +822,13 @@ fn wireframe_hand(color1: u32) -> Vec<Triangle3d> {
         get_triangle_from_vecs(v_011, v_001, v_010, color), // 011-001-010
 
     ]; 
+
+    let mut old_idx = out_vec.len();
     out_vec.append(&mut palm_vecs);
-    return out_vec; 
+    idx_tup.push(("palm".to_string(), old_idx, out_vec.len()));
+
+    println!("{:?}", idx_tup); 
+    return (out_vec, idx_tup); 
 }
 
 fn make_hand_skel(buffer: &mut [u32]) {
@@ -883,6 +920,11 @@ fn main() {
         .unwrap_or_else(|e| panic!("Error making a window! You goofed!: {}", e));
     
     let mut angle = 0.0;
+    let mut hand = wireframe_hand(BLUE); 
+
+    let mut hand_triangles = hand.0.clone(); 
+    let mut dir = 1.0; 
+
     while window.is_open() && !window.is_key_down(Key::Q) {
         buffer = reset_screen(); 
         // make_square(&mut buffer, 300, 300, 100, GREEN);
@@ -898,11 +940,73 @@ fn main() {
         // let cube2 = get_cube_triangles(35, 50, 35, 50, RED); 
         // draw_3d_from_triangles(&mut buffer, cube2); 
         // let cube3 = rotate_triangles(get_cube_triangles(50, 50, 50, 50, BLUE), angle, -1.0 * angle, -0.5 * angle);
-        make_hand_skel(&mut buffer); 
-        let mut hand = wireframe_hand(BLUE); 
-        // hand = rotate_triangles(hand,  angle, -1.0 * angle, -0.5 * angle);
-        draw_3d_from_triangles(&mut buffer, hand);
-        angle += 0.01; 
+        // make_hand_skel(&mut buffer); 
+        
+        // tops
+        let finger_1_top: Vec<_> = hand_triangles[24..36].to_vec();
+        let finger_1_top = rotate_triangles(finger_1_top, 0.0, 0.0, 1.5 * angle);
+        for (i, tri) in finger_1_top.into_iter().enumerate() {
+            hand_triangles[24 + i] = tri;
+        }
+
+        let finger_2_top: Vec<_> = hand_triangles[48..60].to_vec();
+        let finger_2_top = rotate_triangles(finger_2_top, 0.0, 0.0, 1.5 * angle);
+        for (i, tri) in finger_2_top.into_iter().enumerate() {
+            hand_triangles[48 + i] = tri;
+        }
+
+        let finger_3_top: Vec<_> = hand_triangles[72..84].to_vec();
+        let finger_3_top = rotate_triangles(finger_3_top, 0.0, 0.0, 1.5 * angle);
+        for (i, tri) in finger_3_top.into_iter().enumerate() {
+            hand_triangles[72 + i] = tri;
+        }
+
+        let finger_4_top: Vec<_> = hand_triangles[96..108].to_vec();
+        let finger_4_top = rotate_triangles(finger_4_top, 0.0, 0.0,  angle);
+        for (i, tri) in finger_4_top.into_iter().enumerate() {
+            hand_triangles[96 + i] = tri;
+        }
+
+        // bottoms
+        let finger_1_bot: Vec<_> = hand_triangles[36..48].to_vec();
+        let finger_1_bot = rotate_triangles(finger_1_bot, 0.0, 0.0, angle);
+        for (i, tri) in finger_1_bot.into_iter().enumerate() {
+            hand_triangles[36 + i] = tri;
+        }
+
+        let finger_2_bot: Vec<_> = hand_triangles[60..72].to_vec();
+        let finger_2_bot = rotate_triangles(finger_2_bot, 0.0, 0.0, angle);
+        for (i, tri) in finger_2_bot.into_iter().enumerate() {
+            hand_triangles[60 + i] = tri;
+        }
+
+        let finger_3_bot: Vec<_> = hand_triangles[84..96].to_vec();
+        let finger_3_bot = rotate_triangles(finger_3_bot, 0.0, 0.0, angle);
+        for (i, tri) in finger_3_bot.into_iter().enumerate() {
+            hand_triangles[84 + i] = tri;
+        }
+
+        let finger_4_bot: Vec<_> = hand_triangles[108..120].to_vec();
+        let finger_4_bot = rotate_triangles(finger_4_bot, 0.0, 0.0, angle);
+        for (i, tri) in finger_4_bot.into_iter().enumerate() {
+            hand_triangles[108 + i] = tri;
+        }
+
+        // palm
+        let palm: Vec<_> = hand_triangles[120..132].to_vec();
+        let palm = rotate_triangles(palm, 0.0, 0.0, angle / 2.5);
+        for (i, tri) in palm.into_iter().enumerate() {
+            hand_triangles[120 + i] = tri;
+        }
+
+        // hand_triangles = rotate_triangles(hand_triangles.clone(),  angle, -1.0 * angle, -0.5 * angle);
+        draw_3d_from_triangles(&mut buffer, hand_triangles.clone());
+        
+        angle += (dir * 0.00001);
+        
+        if angle > 0.001 {dir = -1.0; }
+        if angle <= -0.00101 {dir = 1.0; }
+        
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
